@@ -3,12 +3,34 @@ import { makeStyles, useTheme } from '@material-ui/core/styles';
 import ReactMarkdown from 'react-markdown';
 import SplitPane from 'react-split-pane';
 import path from 'path';
+import electron from 'electron';
 import './styles/reactSplitPane.css';
+import settings from 'electron-settings';
+import fs from 'fs';
+
 const child = require('child_process').execFile;
 
 const remote = require('electron').remote;
-const args = remote.getGlobal('sharedObject').args;
-const mdPath = args[args.length - 1];
+let args;
+const remoteObj = remote.getGlobal('sharedObject');
+if (remoteObj) {
+  args = remoteObj.args;
+}
+
+const userDataPath = (electron.app || electron.remote.app).getPath('userData');
+
+let mdPath;
+if (args && args.length > 1 && fs.existsSync(args[args.length - 1])) {
+  mdPath = args[args.length - 1];
+  fs.writeFileSync(
+    path.join(userDataPath, 'config.json'),
+    JSON.stringify({ mdPath })
+  );
+} else {
+  mdPath = JSON.parse(
+    fs.readFileSync(path.join(userDataPath, 'config.json'), 'utf8')
+  ).mdPath;
+}
 
 const { existsSync, lstatSync, readdirSync, readFileSync } = require('fs');
 const { join } = require('path');
