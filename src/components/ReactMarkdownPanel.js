@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import SplitPane from 'react-split-pane';
 import path from 'path';
 import './styles/reactSplitPane.css';
+const child = require('child_process').execFile;
 
 const remote = require('electron').remote;
 const args = remote.getGlobal('sharedObject').args;
@@ -32,6 +33,7 @@ const ReactMarkdownPanel = props => {
   const classes = useStyles();
   const [markdown, setMarkdown] = useState('');
   const [subMarkdown, setSubMarkdown] = useState(null);
+  const [subMarkdownPath, setSubMarkdownPath] = useState(null);
   const [rowIndex, setRowIndex] = useState(0);
   const [subDirs, setSubDirs] = useState([]);
   const [subFiles, setSubFiles] = useState([]);
@@ -49,17 +51,27 @@ const ReactMarkdownPanel = props => {
 
   useEffect(() => {
     if (subFiles.length > rowIndex) {
-      const fp = path.join(subDirs[0], subFiles[rowIndex]);
-      if (existsSync(fp)) {
-        setSubMarkdown(readFileSync(fp, 'utf8'));
-      } else {
-        setSubMarkdown(null);
+      const matchingSubFile = subFiles.filter(sf => {
+        if (!sf.includes('-')) {
+          return false;
+        }
+        return parseInt(sf.split('-')[0]) === rowIndex + 1;
+      });
+      if (matchingSubFile.length > 0) {
+        const fp = path.join(subDirs[0], matchingSubFile[0]);
+        if (existsSync(fp)) {
+          setSubMarkdownPath(fp);
+          setSubMarkdown(readFileSync(fp, 'utf8'));
+        } else {
+          setSubMarkdownPath(null);
+          setSubMarkdown(null);
+        }
       }
     }
   }, [rowIndex]);
 
   return (
-    <SplitPane split="horizontal" minSize={300}>
+    <SplitPane split="horizontal" size={'80%'}>
       <div
         style={{
           overflowY: 'auto',
@@ -81,6 +93,14 @@ const ReactMarkdownPanel = props => {
             tableRow: props => (
               <tr
                 onMouseEnter={() => setRowIndex(props.index)}
+                onClick={() => {
+                  if (window.event.ctrlKey) {
+                    child('code', [mdPath], function(err, data) {
+                      console.log(err);
+                      console.log(data.toString());
+                    });
+                  }
+                }}
                 className={classes.tableRow}
               >
                 {props.children}
@@ -92,17 +112,28 @@ const ReactMarkdownPanel = props => {
       <div
         style={{
           overflowY: 'auto',
-          display: 'flex',
           height: '100%',
           paddingLeft: '50px',
           paddingRight: '50px',
-          backgroundColor: '#FDF7E3',
-          flexDirection: 'column',
-          alignItems: 'flex-start'
+          backgroundColor: '#FDF7E3'
         }}
       >
         {subMarkdown ? (
-          <ReactMarkdown source={subMarkdown}></ReactMarkdown>
+          <div
+            style={{
+              textAlign: 'left'
+            }}
+            onClick={() => {
+              if (subMarkdownPath && window.event.ctrlKey) {
+                child('code', [subMarkdownPath], function(err, data) {
+                  console.log(err);
+                  console.log(data.toString());
+                });
+              }
+            }}
+          >
+            <ReactMarkdown source={subMarkdown} />
+          </div>
         ) : (
           <></>
         )}
