@@ -3,6 +3,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import ReactMarkdown from 'react-markdown';
 import SplitPane from 'react-split-pane';
 import path from 'path';
+import chokidar from 'chokidar';
 import electron from 'electron';
 import './styles/reactSplitPane.css';
 import fs from 'fs';
@@ -54,13 +55,18 @@ const ReactMarkdownPanel = props => {
   const [subFiles, setSubFiles] = useState([]);
   useEffect(() => {
     setMarkdown(readFileSync(mdPath, 'utf8'));
-    fs.watch(mdPath, (event, filename) => {
-      if (filename && event === 'change') {
-        // file changed - reload
-        setMarkdown(readFileSync(mdPath, 'utf8'));
-      }
+
+    const watcher = chokidar.watch(mdPath, {
+      persistent: true
     });
+
+    watcher.on('change', path => setMarkdown(readFileSync(mdPath, 'utf8')));
+
     setSubDirs(getDirectories(path.dirname(mdPath)));
+
+    return async () => {
+      await watcher.close();
+    };
   }, []);
 
   useEffect(() => {
@@ -83,12 +89,18 @@ const ReactMarkdownPanel = props => {
         if (existsSync(fp)) {
           setSubMarkdownPath(fp);
           setSubMarkdown(readFileSync(fp, 'utf8'));
-          fs.watch(fp, (event, filename) => {
-            if (filename && event === 'change') {
-              // file changed - reload
-              setSubMarkdown(readFileSync(fp, 'utf8'));
-            }
+
+          const watcher = chokidar.watch(fp, {
+            persistent: true
           });
+
+          watcher.on('change', path =>
+            setSubMarkdown(readFileSync(path, 'utf8'))
+          );
+
+          return async () => {
+            await watcher.close();
+          };
         } else {
           setSubMarkdownPath(null);
           setSubMarkdown(null);
