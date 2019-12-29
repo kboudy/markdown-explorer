@@ -54,6 +54,12 @@ const ReactMarkdownPanel = props => {
   const [subFiles, setSubFiles] = useState([]);
   useEffect(() => {
     setMarkdown(readFileSync(mdPath, 'utf8'));
+    fs.watch(mdPath, (event, filename) => {
+      if (filename && event === 'change') {
+        // file changed - reload
+        setMarkdown(readFileSync(mdPath, 'utf8'));
+      }
+    });
     setSubDirs(getDirectories(path.dirname(mdPath)));
   }, []);
 
@@ -77,6 +83,12 @@ const ReactMarkdownPanel = props => {
         if (existsSync(fp)) {
           setSubMarkdownPath(fp);
           setSubMarkdown(readFileSync(fp, 'utf8'));
+          fs.watch(fp, (event, filename) => {
+            if (filename && event === 'change') {
+              // file changed - reload
+              setSubMarkdown(readFileSync(fp, 'utf8'));
+            }
+          });
         } else {
           setSubMarkdownPath(null);
           setSubMarkdown(null);
