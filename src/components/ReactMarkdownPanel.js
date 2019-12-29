@@ -1,12 +1,12 @@
 import React, { useEffect, useState } from 'react';
-import { makeStyles, useTheme } from '@material-ui/core/styles';
+import { makeStyles } from '@material-ui/core/styles';
 import ReactMarkdown from 'react-markdown';
 import SplitPane from 'react-split-pane';
 import path from 'path';
 import electron from 'electron';
 import './styles/reactSplitPane.css';
-import settings from 'electron-settings';
 import fs from 'fs';
+import { read as configRead, write as configWrite } from '../config';
 
 const child = require('child_process').execFile;
 
@@ -17,19 +17,12 @@ if (remoteObj) {
   args = remoteObj.args;
 }
 
-const userDataPath = (electron.app || electron.remote.app).getPath('userData');
-
 let mdPath;
 if (args && args.length > 1 && fs.existsSync(args[args.length - 1])) {
   mdPath = args[args.length - 1];
-  fs.writeFileSync(
-    path.join(userDataPath, 'config.json'),
-    JSON.stringify({ mdPath })
-  );
+  configWrite({ mdPath });
 } else {
-  mdPath = JSON.parse(
-    fs.readFileSync(path.join(userDataPath, 'config.json'), 'utf8')
-  ).mdPath;
+  mdPath = configRead().mdPath;
 }
 
 const { existsSync, lstatSync, readdirSync, readFileSync } = require('fs');
@@ -92,6 +85,42 @@ const ReactMarkdownPanel = props => {
     }
   }, [rowIndex]);
 
+  const handleMDClick = (props, e, markdownFilePath) => {
+    if (window.event.ctrlKey) {
+      const innerHTML = e.currentTarget.innerHTML;
+      if (innerHTML.includes('data-sourcepos')) {
+        let dataSourcepos = innerHTML.substring(
+          innerHTML.indexOf('data-sourcepos') + 16
+        );
+        dataSourcepos = dataSourcepos.substring(0, dataSourcepos.indexOf('"'));
+        const firstDP = dataSourcepos.split('-')[0];
+        const lineNumber = parseInt(firstDP.split(':')[0]);
+
+        if (window.event.shiftKey) {
+          child(
+            'gnome-terminal',
+            ['--execute', 'vim', `+${lineNumber}`, markdownFilePath],
+            function(err, data) {
+              console.log(err);
+              console.log(data.toString());
+            }
+          );
+        } else {
+          child(
+            'code',
+            ['--new-window', '--goto', markdownFilePath + `:${lineNumber}`],
+            function(err, data) {
+              console.log(err);
+              console.log(data.toString());
+            }
+          );
+        }
+      }
+    } else {
+      setRowIndex(props.index);
+    }
+  };
+
   return (
     <SplitPane split="horizontal" size={'80%'}>
       <div
@@ -107,6 +136,7 @@ const ReactMarkdownPanel = props => {
       >
         <ReactMarkdown
           source={markdown}
+          sourcePos={true} // adds an attribute to all elements data-sourcepos="4:1-4:30"
           includeNodeIndex={true}
           renderers={{
             table: props => (
@@ -114,15 +144,7 @@ const ReactMarkdownPanel = props => {
             ),
             tableRow: props => (
               <tr
-                onMouseEnter={() => setRowIndex(props.index)}
-                onClick={() => {
-                  if (window.event.ctrlKey) {
-                    child('code', [mdPath], function(err, data) {
-                      console.log(err);
-                      console.log(data.toString());
-                    });
-                  }
-                }}
+                onClick={e => handleMDClick(props, e, mdPath)}
                 className={classes.tableRow}
               >
                 {props.children}
@@ -143,18 +165,16 @@ const ReactMarkdownPanel = props => {
         {subMarkdown ? (
           <div
             style={{
+              height: '100%',
               textAlign: 'left'
             }}
-            onClick={() => {
+            onClick={e => {
               if (subMarkdownPath && window.event.ctrlKey) {
-                child('code', [subMarkdownPath], function(err, data) {
-                  console.log(err);
-                  console.log(data.toString());
-                });
+                handleMDClick(props, e, subMarkdownPath);
               }
             }}
           >
-            <ReactMarkdown source={subMarkdown} />
+            <ReactMarkdown source={subMarkdown} sourcePos={true} />
           </div>
         ) : (
           <></>
