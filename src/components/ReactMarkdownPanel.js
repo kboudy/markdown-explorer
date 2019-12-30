@@ -4,7 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import SplitPane from 'react-split-pane';
 import path from 'path';
 import chokidar from 'chokidar';
-import electron from 'electron';
+import electron, { shell } from 'electron';
 import './styles/reactSplitPane.css';
 import fs from 'fs';
 import { read as configRead, write as configWrite } from '../config';
@@ -173,7 +173,14 @@ const ReactMarkdownPanel = props => {
               >
                 {props.children}
               </tr>
-            )
+            ),
+            link: props => {
+              return (
+                <a href={'#'} onClick={shell.openExternal(props.href)}>
+                  {props.children}
+                </a>
+              );
+            }
           }}
         />
       </div>
@@ -198,7 +205,22 @@ const ReactMarkdownPanel = props => {
               }
             }}
           >
-            <ReactMarkdown source={subMarkdown} sourcePos={true} />
+            <ReactMarkdown
+              source={subMarkdown}
+              sourcePos={true}
+              renderers={{
+                link: props => {
+                  return (
+                    <a
+                      href={'#'}
+                      onClick={() => shell.openExternal(props.href)}
+                    >
+                      {props.children}
+                    </a>
+                  );
+                }
+              }}
+            />
           </div>
         ) : (
           <></>
