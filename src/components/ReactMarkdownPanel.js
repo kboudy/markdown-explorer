@@ -21,6 +21,9 @@ if (remoteObj) {
 let mdPath;
 if (args && args.length > 1 && fs.existsSync(args[args.length - 1])) {
   mdPath = args[args.length - 1];
+  if (fs.existsSync(path.join(process.cwd(), mdPath))) {
+    mdPath = path.join(process.cwd(), mdPath);
+  }
   configWrite({ mdPath });
 } else {
   mdPath = configRead().mdPath;
