@@ -169,6 +169,11 @@ const ReactMarkdownPanel = props => {
             table: props => (
               <table className={classes.table}>{props.children}</table>
             ),
+            inlineCode: props => (
+              <span style={{ backgroundColor: '#F1F3F5', color: '#093466' }}>
+                {props.value}
+              </span>
+            ),
             tableRow: props => (
               <tr
                 onClick={e => handleMDClick(props, e, mdPath)}
