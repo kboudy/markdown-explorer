@@ -21,7 +21,7 @@ function setupRecentsMenu() {
   if (c.recentFiles && c.recentFiles.length > 0) {
     var menu = Menu.buildFromTemplate([
       {
-        label: 'Menu',
+        label: 'Recent files',
         submenu: c.recentFiles.map(f => {
           return {
             label: f
