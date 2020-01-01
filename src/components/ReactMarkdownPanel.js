@@ -4,6 +4,7 @@ import ReactMarkdown from 'react-markdown';
 import SplitPane from 'react-split-pane';
 import path from 'path';
 import chokidar from 'chokidar';
+import _ from 'lodash';
 import electron, { shell } from 'electron';
 import './styles/reactSplitPane.css';
 import fs from 'fs';
@@ -18,15 +19,27 @@ if (remoteObj) {
   args = remoteObj.args;
 }
 
-let mdPath;
+const config = configRead();
+
 if (args && args.length > 1 && fs.existsSync(args[args.length - 1])) {
-  mdPath = args[args.length - 1];
-  if (fs.existsSync(path.join(process.cwd(), mdPath))) {
-    mdPath = path.join(process.cwd(), mdPath);
+  if (!config.recentFiles) {
+    config.recentFiles = [];
   }
-  configWrite({ mdPath });
-} else {
-  mdPath = configRead().mdPath;
+  let newMdPath = args[args.length - 1];
+  if (fs.existsSync(path.join(process.cwd(), newMdPath))) {
+    newMdPath = path.join(process.cwd(), newMdPath);
+  }
+  // before we overwrite mdPath, push the old value to recents
+  if (newMdPath && config.mdPath !== newMdPath) {
+    if (config.recentFiles.includes(config.mdPath)) {
+      config.recentFiles = config.recentFiles.filter(f => f !== config.mdPath);
+    }
+    config.recentFiles.unshift(config.mdPath);
+    config.recentFiles = _.take(config.recentFiles, 10);
+  }
+
+  config.mdPath = newMdPath;
+  configWrite(config);
 }
 
 const { existsSync, lstatSync, readdirSync, readFileSync } = require('fs');
@@ -56,16 +69,19 @@ const ReactMarkdownPanel = props => {
   const [rowIndex, setRowIndex] = useState(0);
   const [subDirs, setSubDirs] = useState([]);
   const [subFiles, setSubFiles] = useState([]);
-  useEffect(() => {
-    setMarkdown(readFileSync(mdPath, 'utf8'));
 
-    const watcher = chokidar.watch(mdPath, {
+  useEffect(() => {
+    setMarkdown(readFileSync(config.mdPath, 'utf8'));
+
+    const watcher = chokidar.watch(config.mdPath, {
       persistent: true
     });
 
-    watcher.on('change', path => setMarkdown(readFileSync(mdPath, 'utf8')));
+    watcher.on('change', path =>
+      setMarkdown(readFileSync(config.mdPath, 'utf8'))
+    );
 
-    setSubDirs(getDirectories(path.dirname(mdPath)));
+    setSubDirs(getDirectories(path.dirname(config.mdPath)));
 
     return async () => {
       await watcher.close();
@@ -176,7 +192,7 @@ const ReactMarkdownPanel = props => {
             ),
             tableRow: props => (
               <tr
-                onClick={e => handleMDClick(props, e, mdPath)}
+                onClick={e => handleMDClick(props, e, config.mdPath)}
                 className={classes.tableRow}
               >
                 {props.children}

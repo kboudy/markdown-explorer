@@ -1,9 +1,37 @@
 const electron = require('electron');
-const app = electron.app;
-const BrowserWindow = electron.BrowserWindow;
-
+const fs = require('fs');
 const path = require('path');
 const isDev = require('electron-is-dev');
+
+const app = electron.app;
+const BrowserWindow = electron.BrowserWindow;
+const Menu = electron.Menu;
+
+function setupRecentsMenu() {
+  const userDataPath = (electron.app || electron.remote.app).getPath(
+    'userData'
+  );
+  const fullConfigPath = path.join(userDataPath, 'config.json');
+
+  if (!fs.existsSync(fullConfigPath)) {
+    return;
+  }
+  const c = JSON.parse(fs.readFileSync(fullConfigPath, 'utf8'));
+
+  if (c.recentFiles && c.recentFiles.length > 0) {
+    var menu = Menu.buildFromTemplate([
+      {
+        label: 'Menu',
+        submenu: c.recentFiles.map(f => {
+          return {
+            label: f
+          };
+        })
+      }
+    ]);
+    Menu.setApplicationMenu(menu);
+  }
+}
 
 let mainWindow;
 
@@ -22,6 +50,7 @@ function createWindow() {
     //mainWindow.webContents.openDevTools();
   }
   mainWindow.on('closed', () => (mainWindow = null));
+  setupRecentsMenu();
 }
 
 app.on('ready', createWindow);
