@@ -200,7 +200,7 @@ const ReactMarkdownPanel = props => {
             ),
             link: props => {
               return (
-                <a href={'#'} onClick={shell.openExternal(props.href)}>
+                <a href={'#'} onClick={() => shell.openExternal(props.href)}>
                   {props.children}
                 </a>
               );
