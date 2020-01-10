@@ -140,6 +140,20 @@ const ReactMarkdownPanel = props => {
         const lineNumber = parseInt(firstDP.split(':')[0]);
 
         if (window.event.shiftKey) {
+          const dir = path.dirname(markdownFilePath);
+          const files = fs
+            .readdirSync(dir)
+            .filter(f => /^\d{2,3}/.exec(path.basename(f)));
+
+          const idx = lineNumber - 3; // removes the 2 md table header rows
+          if (idx < files.length) {
+            child('vlc', [path.join(dir, files[idx])], function(err, data) {
+              console.log(err);
+              console.log(data.toString());
+            });
+          }
+          /*           
+          // vim 
           child(
             'gnome-terminal',
             ['--execute', 'vim', `+${lineNumber}`, markdownFilePath],
@@ -148,6 +162,7 @@ const ReactMarkdownPanel = props => {
               console.log(data.toString());
             }
           );
+          */
         } else {
           child(
             'code',
