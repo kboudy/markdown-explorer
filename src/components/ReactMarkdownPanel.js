@@ -198,8 +198,32 @@ const ReactMarkdownPanel = props => {
           includeNodeIndex={true}
           renderers={{
             table: props => (
-              <table className={classes.table}>{props.children}</table>
+              <table
+                // style={{
+                //   border: '1px solid black',
+                //   borderCollapse: 'collapse'
+                // }}
+                className={classes.table}
+              >
+                {props.children}
+              </table>
             ),
+            // tableCell: props =>
+            //   props.isHeader ? (
+            //     <th style={{ border: '1px solid black' }} align="left">
+            //       <b>{props.children}</b>
+            //     </th>
+            //   ) : (
+            //     <td
+            //       style={{ border: '1px solid black', padding: '5px' }}
+            //       align="left"
+            //       onClick={e => {
+            //         handleMDClick(props, e, config.mdPath);
+            //       }}
+            //     >
+            //       {props.children}
+            //     </td>
+            //   ),
             inlineCode: props => (
               <span style={{ backgroundColor: '#F1F3F5', color: '#093466' }}>
                 {props.value}
@@ -207,7 +231,9 @@ const ReactMarkdownPanel = props => {
             ),
             tableRow: props => (
               <tr
-                onClick={e => handleMDClick(props, e, config.mdPath)}
+                onClick={e => {
+                  handleMDClick(props, e, config.mdPath);
+                }}
                 className={classes.tableRow}
               >
                 {props.children}
