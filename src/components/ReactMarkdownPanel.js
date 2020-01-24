@@ -204,6 +204,7 @@ const ReactMarkdownPanel = props => {
           renderers={{
             table: props => (
               <table
+                style={{ userSelect: 'none' }}
                 // style={{
                 //   border: '1px solid black',
                 //   borderCollapse: 'collapse'
