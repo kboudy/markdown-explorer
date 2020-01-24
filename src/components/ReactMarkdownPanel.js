@@ -147,10 +147,15 @@ const ReactMarkdownPanel = props => {
 
           const idx = lineNumber - 3; // removes the 2 md table header rows
           if (idx < files.length) {
-            child('vlc', [path.join(dir, files[idx])], function(err, data) {
-              console.log(err);
-              console.log(data.toString());
-            });
+            child('vlc', [path.join(dir, files[idx])], (err, data) => {});
+
+            setTimeout(() => {
+              child(
+                'i3-msg',
+                ['[class="vlc"] move to workspace 2:2'],
+                (err, data) => {}
+              );
+            }, 500);
           }
           /*           
           // vim 
